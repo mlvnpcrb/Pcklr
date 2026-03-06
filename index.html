@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pickleball Stack Manager</title>
+    <title>HideOut Pekol Estaker</title>
     <style>
         :root {
             --color-white: rgba(255, 255, 255, 1);
@@ -759,46 +759,51 @@
                 return;
             }
 
-            const groupsPlayingTogether = groups.filter(g => g.playTogether && g.members.length >= 2 && g.members.length <= 4);
-            
+            // honour any "play together" group as a single unit; if the group is
+            // present in the queue we will remove all of its members and then
+            // add enough non‑group players to make a full four‑player game.  if
+            // there aren’t sufficient extras available we skip the group and fall
+            // back to the normal rotation.
+            const groupsPlayingTogether = groups.filter(
+                g => g.playTogether && g.members.length >= 1 && g.members.length <= 4
+            );
+
             for (const group of groupsPlayingTogether) {
-                const groupMembersInQueue = [];
+                // gather the queue indices of each member that’s waiting
                 const groupIndices = [];
-                
                 for (let i = 0; i < playersQueue.length; i++) {
                     if (group.members.includes(playersQueue[i].name)) {
-                        groupMembersInQueue.push(playersQueue[i]);
                         groupIndices.push(i);
                     }
                 }
-                
-                if (groupMembersInQueue.length === group.members.length && groupMembersInQueue.length === 2) {
-                    const neededPlayers = 2;
-                    const otherPlayersAvailable = playersQueue.filter(p => !group.members.includes(p.name)).length;
-                    
-                    if (otherPlayersAvailable < neededPlayers) {
-                        continue;
-                    }
-                    
-                    for (let i = groupIndices.length - 1; i >= 0; i--) {
-                        playersQueue.splice(groupIndices[i], 1);
-                    }
-                    
-                    const remainingPlayers = [];
-                    
-                    for (let i = 0; i < 2 && i < playersQueue.length; i++) {
-                        remainingPlayers.push(playersQueue[i]);
-                    }
-                    
-                    for (let i = 0; i < remainingPlayers.length; i++) {
-                        const idx = playersQueue.indexOf(remainingPlayers[i]);
-                        if (idx !== -1) {
-                            playersQueue.splice(idx, 1);
-                            i--;
+
+                // only proceed when every member is queued
+                if (groupIndices.length === group.members.length) {
+                    const groupPlayers = groupIndices.map(i => playersQueue[i]);
+                    const extrasNeeded = 4 - groupPlayers.length;
+
+                    // collect extras from the remaining queue
+                    const extras = [];
+                    for (let i = 0; i < playersQueue.length && extras.length < extrasNeeded; i++) {
+                        if (!group.members.includes(playersQueue[i].name)) {
+                            extras.push(playersQueue[i]);
                         }
                     }
-                    
-                    courts[courtIndex] = [...groupMembersInQueue, ...remainingPlayers];
+
+                    if (extras.length < extrasNeeded) {
+                        // not enough non‑group players; try the next group
+                        continue;
+                    }
+
+                    // remove both the group members and the extras (descending
+                    // so we don’t invalidate earlier indices)
+                    const removeIdxs = [
+                        ...groupIndices,
+                        ...extras.map(e => playersQueue.indexOf(e))
+                    ].sort((a, b) => b - a);
+                    removeIdxs.forEach(idx => playersQueue.splice(idx, 1));
+
+                    courts[courtIndex] = [...groupPlayers, ...extras];
                     updateDisplay();
                     return;
                 }
