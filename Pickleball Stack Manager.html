@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pickleball Stack Manager</title>
+    <style>
+        :root {
+            --color-white: rgba(255, 255, 255, 1);
+            --color-black: rgba(0, 0, 0, 1);
+            --color-cream-50: rgba(252, 252, 249, 1);
+            --color-cream-100: rgba(255, 255, 253, 1);
+            --color-gray-200: rgba(245, 245, 245, 1);
+            --color-gray-300: rgba(167, 169, 169, 1);
+            --color-gray-400: rgba(119, 124, 124, 1);
+            --color-slate-500: rgba(98, 108, 113, 1);
+            --color-brown-600: rgba(94, 82, 64, 1);
+            --color-charcoal-700: rgba(31, 33, 33, 1);
+            --color-charcoal-800: rgba(38, 40, 40, 1);
+            --color-slate-900: rgba(19, 52, 59, 1);
+            --color-teal-300: rgba(50, 184, 198, 1);
+            --color-teal-400: rgba(45, 166, 178, 1);
+            --color-teal-500: rgba(33, 128, 141, 1);
+            --color-teal-600: rgba(29, 116, 128, 1);
+            --color-teal-700: rgba(26, 104, 115, 1);
+            --color-red-400: rgba(255, 84, 89, 1);
+            --color-red-500: rgba(192, 21, 47, 1);
+            --color-orange-400: rgba(230, 129, 97, 1);
+            --color-orange-500: rgba(168, 75, 47, 1);
+            --color-brown-600-rgb: 94, 82, 64;
+            --color-teal-500-rgb: 33, 128, 141;
+            --color-background: var(--color-cream-50);
+            --color-surface: var(--color-cream-100);
+            --color-text: var(--color-slate-900);
+            --color-text-secondary: var(--color-slate-500);
+            --color-primary: var(--color-teal-500);
+            --color-primary-hover: var(--color-teal-600);
+            --color-primary-active: var(--color-teal-700);
+            --color-secondary: rgba(var(--color-brown-600-rgb), 0.12);
+            --color-secondary-hover: rgba(var(--color-brown-600-rgb), 0.2);
+            --color-border: rgba(var(--color-brown-600-rgb), 0.2);
+            --color-btn-primary-text: var(--color-cream-50);
+            --color-card-border: rgba(var(--color-brown-600-rgb), 0.12);
+            --color-error: var(--color-red-500);
+            --color-success: var(--color-teal-500);
+            --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --space-4: 4px;
+            --space-8: 8px;
+            --space-12: 12px;
+            --space-16: 16px;
+            --space-20: 20px;
+            --space-24: 24px;
+            --space-32: 32px;
+            --radius-base: 8px;
+            --radius-lg: 12px;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --color-background: var(--color-charcoal-700);
+                --color-surface: var(--color-charcoal-800);
+                --color-text: var(--color-gray-200);
+                --color-text-secondary: rgba(167, 169, 169, 0.7);
+                --color-primary: var(--color-teal-300);
+                --color-primary-hover: var(--color-teal-400);
+                --color-secondary: rgba(119, 124, 124, 0.15);
+                --color-secondary-hover: rgba(119, 124, 124, 0.25);
+                --color-border: rgba(119, 124, 124, 0.3);
+                --color-error: var(--color-red-400);
+                --color-success: var(--color-teal-300);
+                --color-btn-primary-text: var(--color-slate-900);
+                --color-card-border: rgba(119, 124, 124, 0.2);
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family-base);
+            background-color: var(--color-background);
+            color: var(--color-text);
+            padding: var(--space-20);
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: var(--space-32);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: var(--space-8);
+            color: var(--color-text);
+        }
+
+        .header p {
+            color: var(--color-text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .controls {
+            background: var(--color-surface);
+            padding: var(--space-24);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--color-card-border);
+            margin-bottom: var(--space-24);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .control-row {
+            display: flex;
+            gap: var(--space-16);
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: var(--space-8);
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--color-text);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: var(--space-12);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-base);
+            background: var(--color-background);
+            color: var(--color-text);
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            outline: 2px solid var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        .btn {
+            padding: var(--space-12) var(--space-24);
+            border: none;
+            border-radius: var(--radius-base);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn--primary {
+            background: var(--color-primary);
+            color: var(--color-btn-primary-text);
+        }
+
+        .btn--primary:hover {
+            background: var(--color-primary-hover);
+        }
+
+        .btn--secondary {
+            background: var(--color-secondary);
+            color: var(--color-text);
+        }
+
+        .btn--secondary:hover {
+            background: var(--color-secondary-hover);
+        }
+
+        .queue-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: var(--space-24);
+            margin-bottom: var(--space-24);
+        }
+
+        .queue-card {
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--color-card-border);
+            padding: var(--space-24);
+            box-shadow: var(--shadow-md);
+        }
+
+        .queue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-20);
+            padding-bottom: var(--space-16);
+            border-bottom: 2px solid var(--color-border);
+        }
+
+        .queue-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: var(--space-8);
+        }
+
+        .queue-badge {
+            padding: var(--space-4) var(--space-12);
+            border-radius: var(--radius-base);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .queue-badge--winners {
+            background: rgba(var(--color-teal-500-rgb), 0.15);
+            color: var(--color-success);
+        }
+
+        .queue-badge--non-winners {
+            background: rgba(var(--color-brown-600-rgb), 0.15);
+            color: var(--color-text-secondary);
+        }
+
+        .queue-badge--next {
+            background: var(--color-primary);
+            color: var(--color-btn-primary-text);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .player-list {
+            min-height: 200px;
+        }
+
+        .player-item {
+            background: var(--color-background);
+            padding: var(--space-12) var(--space-16);
+            border-radius: var(--radius-base);
+            margin-bottom: var(--space-8);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--color-border);
+            transition: all 0.2s;
+        }
+
+        .player-item:hover {
+            border-color: var(--color-primary);
+            transform: translateY(-1px);
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: var(--space-12);
+        }
+
+        .player-number {
+            background: var(--color-secondary);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .player-name {
+            font-weight: 500;
+        }
+
+        .group-indicator {
+            background: var(--color-primary);
+            color: var(--color-btn-primary-text);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .player-remove {
+            background: transparent;
+            border: none;
+            color: var(--color-error);
+            cursor: pointer;
+            padding: var(--space-4);
+            border-radius: var(--radius-base);
+            transition: all 0.2s;
+        }
+
+        .player-remove:hover {
+            background: rgba(var(--color-brown-600-rgb), 0.1);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--space-32);
+            color: var(--color-text-secondary);
+        }
+
+        .courts-section {
+            margin-bottom: var(--space-24);
+        }
+
+        .courts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-16);
+        }
+
+        .court-card {
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--color-card-border);
+            padding: var(--space-20);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .court-header {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: var(--space-16);
+            padding-bottom: var(--space-12);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .court-players {
+            display: grid;
+            gap: var(--space-8);
+        }
+
+        .court-player {
+            background: var(--color-background);
+            padding: var(--space-8) var(--space-12);
+            border-radius: var(--radius-base);
+            font-size: 0.875rem;
+            border: 1px solid var(--color-border);
+        }
+
+        .btn-send {
+            width: 100%;
+            margin-top: var(--space-12);
+            background: var(--color-success);
+            color: var(--color-btn-primary-text);
+        }
+
+        .stats {
+            background: var(--color-surface);
+            padding: var(--space-20);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--color-card-border);
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: var(--space-16);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            margin-top: var(--space-4);
+        }
+
+        .group-section {
+            margin-bottom: var(--space-24);
+        }
+
+        .groups-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-16);
+        }
+
+        .group-card {
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--color-card-border);
+            padding: var(--space-20);
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .group-card:hover {
+            border-color: var(--color-primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .group-title {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .group-count {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+        }
+
+        .group-members {
+            display: grid;
+            gap: var(--space-8);
+            margin-bottom: var(--space-12);
+        }
+
+        .group-member {
+            background: var(--color-background);
+            padding: var(--space-8) var(--space-12);
+            border-radius: var(--radius-base);
+            font-size: 0.875rem;
+            border: 1px solid var(--color-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-group-action {
+            width: 100%;
+            margin-top: var(--space-8);
+        }
+
+        .btn-delete {
+            background: var(--color-error);
+            color: var(--color-btn-primary-text);
+        }
+
+        .btn-delete:hover {
+            opacity: 0.8;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            padding: var(--space-24);
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: var(--space-16);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: var(--space-12);
+            margin-top: var(--space-20);
+        }
+
+        @media (max-width: 768px) {
+            .queue-container {
+                grid-template-columns: 1fr;
+            }
+            .control-row {
+                flex-direction: column;
+            }
+            .form-group {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏓 Pickleball Stack Manager</h1>
+            <p>Double-queue rotation system for organized open play</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-row">
+                <button class="btn btn--primary" onclick="openPlayerModal()">Add Player</button>
+                <button class="btn btn--primary" onclick="openGroupModal()">Create Group</button>
+                <button class="btn btn--primary" onclick="openCourtsModal()">Change Courts</button>
+                <button class="btn btn--secondary" onclick="resetSystem()">Reset All</button>
+            </div>
+        </div>
+
+        <div class="group-section" id="groupSection" style="display: none;">
+            <h2 style="margin-bottom: var(--space-16); font-size: 1.5rem;">Groups</h2>
+            <div id="groupsGrid" class="groups-grid"></div>
+        </div>
+
+        <div class="queue-container">
+            <div class="queue-card">
+                <div class="queue-header">
+                    <div class="queue-title">
+                        <span>👥 Player Queue</span>
+                    </div>
+                    <span class="queue-badge queue-badge--winners" id="playersCount">0 players</span>
+                </div>
+                <div id="playersQueue" class="player-list">
+                    <div class="empty-state">No players in queue</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="courts-section">
+            <h2 style="margin-bottom: var(--space-16); font-size: 1.5rem;">Active Courts</h2>
+            <div id="courtsGrid" class="courts-grid"></div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="totalPlayers">0</div>
+                <div class="stat-label">Total Players</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="gamesPlayed">0</div>
+                <div class="stat-label">Games Played</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="activeCourts">3</div>
+                <div class="stat-label">Active Courts</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="playerModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-header">Add Player</h3>
+            <div class="form-group">
+                <label class="form-label" for="playerName">Player Name(s)</label>
+                <input type="text" id="playerName" class="form-control" placeholder="Enter name or names separated by comma">
+                <small style="color: var(--color-text-secondary); font-size: 0.8rem; margin-top: 4px; display: block;">
+                    Single: "John" or Multiple: "John, Mary, Bob"
+                </small>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn--primary" onclick="addPlayer()">Add to Queue</button>
+                <button class="btn btn--secondary" onclick="closePlayerModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="groupModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-header">Create Group</h3>
+            <div class="form-group">
+                <label class="form-label" for="groupName">Group Name</label>
+                <input type="text" id="groupName" class="form-control" placeholder="e.g., Smith Family">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Select Members (max 4)</label>
+                <div id="availablePlayers" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--radius-base); padding: var(--space-12); background: var(--color-background);">
+                    <div style="color: var(--color-text-secondary); text-align: center; padding: var(--space-16);">Add players to queue first</div>
+                </div>
+                <small style="color: var(--color-text-secondary); font-size: 0.8rem; margin-top: 4px; display: block;">
+                    Click on players from the queue to add them to the group
+                </small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Selected Members (<span id="selectedCount">0</span>/4)</label>
+                <div id="selectedPlayers" style="min-height: 100px; border: 1px solid var(--color-border); border-radius: var(--radius-base); padding: var(--space-12); background: var(--color-background);">
+                    <div style="color: var(--color-text-secondary); text-align: center; padding: var(--space-16);">No members selected</div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn--primary" onclick="saveGroup()">Save Group</button>
+                <button class="btn btn--secondary" onclick="closeGroupModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="courtsModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-header">Change Number of Courts</h3>
+            <div class="form-group">
+                <label class="form-label" for="courtCountInput">Number of Courts (1-10)</label>
+                <input type="number" id="courtCountInput" class="form-control" value="3" min="1" max="10">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn--primary" onclick="saveCourts()">Apply Changes</button>
+                <button class="btn btn--secondary" onclick="closeCourtsModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notificationModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-header" id="notificationTitle">Notification</h3>
+            <div style="padding: var(--space-16) 0;">
+                <p id="notificationMessage" style="white-space: pre-line; line-height: 1.6;"></p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn--primary" onclick="closeNotification()" style="width: 100%;">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="groupDetailsModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-header" id="groupDetailsTitle">Group Details</h3>
+            <div class="form-group">
+                <label class="form-label">Members</label>
+                <div id="groupDetailsMembersList" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--radius-base); padding: var(--space-12); background: var(--color-background);">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn--primary" id="groupDetailsAddBtn" style="flex: 1;">Add to Queue</button>
+                <button class="btn btn-delete" id="groupDetailsDeleteBtn" style="flex: 1;">Delete Group</button>
+                <button class="btn btn--secondary" onclick="closeGroupDetailsModal()" style="flex: 1;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let playersQueue = [];
+        let courts = [];
+        let gamesPlayedCount = 0;
+        let groups = [];
+        let queueIdCounter = 0;
+
+        let courtCount = 3;
+
+        function initializeCourts() {
+            courts = Array(courtCount).fill(null).map(() => []);
+            updateCourtsDisplay();
+            updateStats();
+        }
+
+        function addPlayer() {
+            const playerInput = document.getElementById('playerName');
+            const playerNames = playerInput.value.trim();
+            
+            if (!playerNames) {
+                alert('Please enter player name(s)');
+                return;
+            }
+
+            const players = playerNames.split(',').map(name => name.trim()).filter(name => name.length > 0);
+            
+            if (players.length === 0) {
+                alert('Please enter valid player name(s)');
+                return;
+            }
+
+            const duplicates = [];
+            const added = [];
+
+            players.forEach(playerName => {
+                const existsInQueue = playersQueue.some(p => p.name.toLowerCase() === playerName.toLowerCase());
+                const existsInCourts = courts.some(court => court.some(p => p.name.toLowerCase() === playerName.toLowerCase()));
+                
+                if (existsInQueue || existsInCourts) {
+                    duplicates.push(playerName);
+                } else {
+                    playersQueue.push({
+                        id: queueIdCounter++,
+                        name: playerName,
+                        groupId: null,
+                        groupName: null
+                    });
+                    added.push(playerName);
+                }
+            });
+
+            playerInput.value = '';
+            updateDisplay();
+            closePlayerModal();
+            
+            if (duplicates.length > 0 && added.length === 0) {
+                showNotification('All players are already in the system', `Cannot add duplicate player(s): ${duplicates.join(', ')}`, 'error');
+            } else if (duplicates.length > 0 && added.length > 0) {
+                showNotification('Some players were duplicates', `Added: ${added.join(', ')}\n\nSkipped duplicates: ${duplicates.join(', ')}`, 'warning');
+            } else if (added.length > 1) {
+                showNotification('Players added successfully', `Added ${added.length} players: ${added.join(', ')}`, 'success');
+            } else if (added.length === 1) {
+                showNotification('Player added', `${added[0]} has been added to the queue`, 'success');
+            }
+        }
+
+        function removePlayer(index) {
+            playersQueue.splice(index, 1);
+            updateDisplay();
+        }
+
+        function removeGroupFromQueue(groupName) {
+            const group = groups.find(g => g.name === groupName && g.playTogether);
+            if (!group) return;
+            
+            if (!confirm(`Remove all members of "${groupName}" from queue?`)) return;
+            
+            group.members.forEach(member => {
+                const index = playersQueue.findIndex(p => p.name.toLowerCase() === member.toLowerCase());
+                if (index !== -1) {
+                    playersQueue.splice(index, 1);
+                }
+            });
+            
+            updateDisplay();
+        }
+
+        function sendToCourt(courtIndex) {
+            const court = courts[courtIndex];
+            
+            if (court.length > 0) {
+                alert('Please finish the current game first');
+                return;
+            }
+            
+            if (playersQueue.length < 4) {
+                alert('Not enough players in queue (need 4 players)');
+                return;
+            }
+
+            const groupsPlayingTogether = groups.filter(g => g.playTogether && g.members.length >= 2 && g.members.length <= 4);
+            
+            for (const group of groupsPlayingTogether) {
+                const groupMembersInQueue = [];
+                const groupIndices = [];
+                
+                for (let i = 0; i < playersQueue.length; i++) {
+                    if (group.members.includes(playersQueue[i].name)) {
+                        groupMembersInQueue.push(playersQueue[i]);
+                        groupIndices.push(i);
+                    }
+                }
+                
+                if (groupMembersInQueue.length === group.members.length && groupMembersInQueue.length === 2) {
+                    const neededPlayers = 2;
+                    const otherPlayersAvailable = playersQueue.filter(p => !group.members.includes(p.name)).length;
+                    
+                    if (otherPlayersAvailable < neededPlayers) {
+                        continue;
+                    }
+                    
+                    for (let i = groupIndices.length - 1; i >= 0; i--) {
+                        playersQueue.splice(groupIndices[i], 1);
+                    }
+                    
+                    const remainingPlayers = [];
+                    
+                    for (let i = 0; i < 2 && i < playersQueue.length; i++) {
+                        remainingPlayers.push(playersQueue[i]);
+                    }
+                    
+                    for (let i = 0; i < remainingPlayers.length; i++) {
+                        const idx = playersQueue.indexOf(remainingPlayers[i]);
+                        if (idx !== -1) {
+                            playersQueue.splice(idx, 1);
+                            i--;
+                        }
+                    }
+                    
+                    courts[courtIndex] = [...groupMembersInQueue, ...remainingPlayers];
+                    updateDisplay();
+                    return;
+                }
+            }
+
+            const players = playersQueue.splice(0, 4);
+            courts[courtIndex] = players;
+            
+            updateDisplay();
+        }
+
+        function finishGame(courtIndex, winnersIndices) {
+            const court = courts[courtIndex];
+            
+            if (court.length === 0) {
+                alert('No game in progress on this court');
+                return;
+            }
+
+            court.forEach((player) => {
+                playersQueue.push(player);
+            });
+            
+            courts[courtIndex] = [];
+            gamesPlayedCount++;
+            
+            updateDisplay();
+        }
+
+        function finishGameSimple(courtIndex) {
+            const court = courts[courtIndex];
+            
+            if (court.length === 0) {
+                alert('No game in progress');
+                return;
+            }
+
+            finishGame(courtIndex, []);
+        }
+
+        function updateDisplay() {
+            updateQueueDisplay('playersQueue', 'playersCount', playersQueue);
+            updateCourtsDisplay();
+            updateStats();
+        }
+
+        function updateQueueDisplay(elementId, countId, queue) {
+            const container = document.getElementById(elementId);
+            const countBadge = document.getElementById(countId);
+            
+            const playTogetherGroups = groups.filter(g => g.playTogether);
+            const playTogetherGroupMembers = new Set();
+            playTogetherGroups.forEach(g => g.members.forEach(m => playTogetherGroupMembers.add(m.toLowerCase())));
+            
+            const visibleQueue = queue.filter(player => !playTogetherGroupMembers.has(player.name.toLowerCase()));
+            
+            const groupsInQueue = playTogetherGroups.filter(group => {
+                return group.members.every(member => 
+                    queue.some(p => p.name.toLowerCase() === member.toLowerCase())
+                );
+            });
+            
+            const totalVisible = visibleQueue.length + groupsInQueue.length;
+            countBadge.textContent = `${totalVisible} ${totalVisible !== 1 ? 'entries' : 'entry'}`;
+            
+            if (totalVisible === 0) {
+                container.innerHTML = '<div class="empty-state">No players in queue</div>';
+                return;
+            }
+
+            let html = '';
+            let queueIndex = 0;
+            let displayPosition = 1;
+            
+            while (queueIndex < queue.length || groupsInQueue.length > 0) {
+                const currentPlayer = queue[queueIndex];
+                
+                if (!currentPlayer || playTogetherGroupMembers.has(currentPlayer.name.toLowerCase())) {
+                    const matchingGroup = playTogetherGroups.find(group => 
+                        group.members.every(member => 
+                            queue.slice(queueIndex).some(p => p.name.toLowerCase() === member.toLowerCase())
+                        ) && group.members.some(member => 
+                            currentPlayer && member.toLowerCase() === currentPlayer.name.toLowerCase()
+                        )
+                    );
+                    
+                    if (matchingGroup && groupsInQueue.includes(matchingGroup)) {
+                        html += `
+                            <div class="player-item" style="background: rgba(var(--color-teal-500-rgb), 0.08); border: 2px solid var(--color-primary);">
+                                <div class="player-info">
+                                    <div class="player-number">${displayPosition}</div>
+                                    <div class="player-name">
+                                        <strong>${matchingGroup.name}</strong>
+                                        <span class="group-indicator">Group of ${matchingGroup.members.length}</span>
+                                    </div>
+                                </div>
+                                <button class="player-remove" onclick="removeGroupFromQueue('${matchingGroup.name}')">✕</button>
+                            </div>
+                        `;
+                        
+                        groupsInQueue.splice(groupsInQueue.indexOf(matchingGroup), 1);
+                        
+                        matchingGroup.members.forEach(member => {
+                            const idx = queue.findIndex((p, i) => i >= queueIndex && p.name.toLowerCase() === member.toLowerCase());
+                            if (idx !== -1) {
+                                queue.splice(idx, 1);
+                            }
+                        });
+                        
+                        displayPosition++;
+                        continue;
+                    }
+                    
+                    queueIndex++;
+                    continue;
+                }
+                
+                const inGroup = groups.some(g => g.members.includes(currentPlayer.name));
+                const groupName = inGroup ? groups.find(g => g.members.includes(currentPlayer.name)).name : '';
+                const displayGroup = currentPlayer.groupId ? currentPlayer.groupName : (inGroup ? groupName : '');
+                
+                html += `
+                    <div class="player-item">
+                        <div class="player-info">
+                            <div class="player-number">${displayPosition}</div>
+                            <div class="player-name">
+                                ${currentPlayer.name}
+                                ${displayGroup ? `<span class="group-indicator">${displayGroup}</span>` : ''}
+                            </div>
+                        </div>
+                        <button class="player-remove" onclick="removePlayer(${queueIndex})">✕</button>
+                    </div>
+                `;
+                
+                queueIndex++;
+                displayPosition++;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function updateCourtsDisplay() {
+            const courtsGrid = document.getElementById('courtsGrid');
+            
+            if (courts.length !== courtCount) {
+                initializeCourts();
+                return;
+            }
+
+            courtsGrid.innerHTML = courts.map((court, index) => `
+                <div class="court-card">
+                    <div class="court-header">Court ${index + 1}</div>
+                    <div class="court-players">
+                        ${court.length > 0 ? court.map((player, pIndex) => `
+                            <div class="court-player">Player ${pIndex + 1}: ${player.name}${player.groupId ? ` (${player.groupName})` : ''}</div>
+                        `).join('') : '<div class="empty-state" style="padding: var(--space-16);">Ready for players</div>'}
+                    </div>
+                    ${court.length === 0 ? `
+                        <button class="btn btn-send" onclick="sendToCourt(${index})">Send Next 4</button>
+                    ` : `
+                        <button class="btn btn-send" onclick="finishGameSimple(${index})">Finish Game</button>
+                    `}
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            const totalPlayers = playersQueue.length + courts.reduce((sum, court) => sum + court.length, 0);
+            document.getElementById('totalPlayers').textContent = totalPlayers;
+            document.getElementById('gamesPlayed').textContent = gamesPlayedCount;
+            document.getElementById('activeCourts').textContent = courts.length;
+        }
+
+        function resetSystem() {
+            if (!confirm('Are you sure you want to reset the entire system? This will clear all queues and courts.')) {
+                return;
+            }
+            
+            playersQueue = [];
+            courts = [];
+            gamesPlayedCount = 0;
+            
+            initializeCourts();
+            updateDisplay();
+        }
+
+        function openPlayerModal() {
+            document.getElementById('playerModal').classList.add('active');
+            document.getElementById('playerName').focus();
+        }
+
+        function closePlayerModal() {
+            document.getElementById('playerModal').classList.remove('active');
+            document.getElementById('playerName').value = '';
+        }
+
+        let selectedGroupMembers = [];
+
+        function openGroupModal() {
+            selectedGroupMembers = [];
+            updateAvailablePlayers();
+            updateSelectedPlayers();
+            document.getElementById('groupModal').classList.add('active');
+            document.getElementById('groupName').focus();
+        }
+
+        function closeGroupModal() {
+            document.getElementById('groupModal').classList.remove('active');
+            document.getElementById('groupName').value = '';
+            selectedGroupMembers = [];
+        }
+
+        function updateAvailablePlayers() {
+            const container = document.getElementById('availablePlayers');
+            
+            if (playersQueue.length === 0) {
+                container.innerHTML = '<div style="color: var(--color-text-secondary); text-align: center; padding: var(--space-16);">Add players to queue first</div>';
+                return;
+            }
+
+            container.innerHTML = playersQueue.map((player, index) => {
+                const isSelected = selectedGroupMembers.some(m => m.id === player.id);
+                const isDisabled = selectedGroupMembers.length >= 4 && !isSelected;
+                const inGroup = groups.some(g => g.members.includes(player.name));
+                const groupName = inGroup ? groups.find(g => g.members.includes(player.name)).name : '';
+                
+                return `
+                    <div class="player-item" style="cursor: ${isDisabled ? 'not-allowed' : 'pointer'}; opacity: ${isDisabled ? '0.5' : '1'}; ${isSelected ? 'border-color: var(--color-primary); background: rgba(var(--color-teal-500-rgb), 0.1);' : ''}" onclick="${isDisabled ? '' : `togglePlayerSelection(${index})`}">
+                        <div class="player-info">
+                            <div class="player-number">${index + 1}</div>
+                            <div class="player-name">
+                                ${player.name}
+                                ${inGroup ? `<span class="group-indicator">${groupName}</span>` : ''}
+                            </div>
+                        </div>
+                        ${isSelected ? '<span style="color: var(--color-success); font-weight: 600;">✓</span>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function togglePlayerSelection(playerIndex) {
+            const player = playersQueue[playerIndex];
+            const existingIndex = selectedGroupMembers.findIndex(m => m.id === player.id);
+            
+            if (existingIndex >= 0) {
+                selectedGroupMembers.splice(existingIndex, 1);
+            } else {
+                if (selectedGroupMembers.length >= 4) {
+                    alert('Maximum 4 members per group');
+                    return;
+                }
+                selectedGroupMembers.push(player);
+            }
+            
+            updateAvailablePlayers();
+            updateSelectedPlayers();
+        }
+
+        function removeSelectedMember(memberId) {
+            selectedGroupMembers = selectedGroupMembers.filter(m => m.id !== memberId);
+            updateAvailablePlayers();
+            updateSelectedPlayers();
+        }
+
+        function updateSelectedPlayers() {
+            const container = document.getElementById('selectedPlayers');
+            const countSpan = document.getElementById('selectedCount');
+            
+            countSpan.textContent = selectedGroupMembers.length;
+            
+            if (selectedGroupMembers.length === 0) {
+                container.innerHTML = '<div style="color: var(--color-text-secondary); text-align: center; padding: var(--space-16);">No members selected</div>';
+                return;
+            }
+
+            container.innerHTML = selectedGroupMembers.map((member, index) => `
+                <div class="player-item" style="margin-bottom: var(--space-8);">
+                    <div class="player-info">
+                        <div class="player-number">${index + 1}</div>
+                        <div class="player-name">${member.name}</div>
+                    </div>
+                    <button class="player-remove" onclick="removeSelectedMember(${member.id})">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function openCourtsModal() {
+            document.getElementById('courtCountInput').value = courtCount;
+            document.getElementById('courtsModal').classList.add('active');
+            document.getElementById('courtCountInput').focus();
+        }
+
+        function closeCourtsModal() {
+            document.getElementById('courtsModal').classList.remove('active');
+        }
+
+        function saveCourts() {
+            const newCount = parseInt(document.getElementById('courtCountInput').value);
+            
+            if (isNaN(newCount) || newCount < 1 || newCount > 10) {
+                alert('Please enter a valid number between 1 and 10');
+                return;
+            }
+            
+            courtCount = newCount;
+            initializeCourts();
+            closeCourtsModal();
+        }
+
+        function saveGroup() {
+            const groupName = document.getElementById('groupName').value.trim();
+            
+            if (!groupName) {
+                alert('Please enter a group name');
+                return;
+            }
+            
+            if (selectedGroupMembers.length === 0) {
+                alert('Please select at least one member');
+                return;
+            }
+            
+            const memberNames = selectedGroupMembers.map(m => m.name);
+            const uniqueMembers = [...new Set(memberNames.map(name => name.toLowerCase()))];
+            
+            if (uniqueMembers.length !== memberNames.length) {
+                alert('Cannot create group with duplicate members');
+                return;
+            }
+            
+            groups.push({
+                id: Date.now(),
+                name: groupName,
+                members: memberNames,
+                playTogether: false
+            });
+            
+            closeGroupModal();
+            updateGroupsDisplay();
+            alert(`Group "${groupName}" created with ${selectedGroupMembers.length} members`);
+        }
+
+        function addGroupToQueue(groupId) {
+            const group = groups.find(g => g.id === groupId);
+            if (!group) return;
+            
+            const duplicates = [];
+            const added = [];
+            
+            group.members.forEach(member => {
+                const existsInQueue = playersQueue.some(p => p.name.toLowerCase() === member.toLowerCase());
+                const existsInCourts = courts.some(court => court.some(p => p.name.toLowerCase() === member.toLowerCase()));
+                
+                if (existsInQueue || existsInCourts) {
+                    duplicates.push(member);
+                } else {
+                    playersQueue.push({
+                        id: queueIdCounter++,
+                        name: member,
+                        groupId: group.id,
+                        groupName: group.name
+                    });
+                    added.push(member);
+                }
+            });
+            
+            updateDisplay();
+            
+            if (duplicates.length > 0 && added.length === 0) {
+                showNotification('All group members already in system', `Cannot add group "${group.name}". All members are duplicates: ${duplicates.join(', ')}`, 'error');
+            } else if (duplicates.length > 0) {
+                showNotification('Group partially added', `Added ${added.length} from "${group.name}"\n\nSkipped duplicates: ${duplicates.join(', ')}`, 'warning');
+            } else {
+                showNotification('Group added successfully', `Added ${added.length} players from "${group.name}" to queue`, 'success');
+            }
+        }
+
+        function deleteGroup(groupId) {
+            const group = groups.find(g => g.id === groupId);
+            if (!group) return;
+            
+            if (!confirm(`Delete group "${group.name}"?`)) return;
+            
+            groups = groups.filter(g => g.id !== groupId);
+            updateGroupsDisplay();
+        }
+
+        function removeMemberFromGroup(groupId, memberIndex) {
+            const group = groups.find(g => g.id === groupId);
+            if (!group) return;
+            
+            if (group.members.length === 1) {
+                alert('Cannot remove the last member. Delete the group instead.');
+                return;
+            }
+            
+            group.members.splice(memberIndex, 1);
+            updateGroupsDisplay();
+        }
+
+        function updateGroupsDisplay() {
+            const groupsGrid = document.getElementById('groupsGrid');
+            const groupSection = document.getElementById('groupSection');
+            
+            if (groups.length === 0) {
+                groupSection.style.display = 'none';
+                return;
+            }
+            
+            groupSection.style.display = 'block';
+            
+            groupsGrid.innerHTML = groups.map(group => `
+                <div class="group-card" onclick="openGroupDetailsModal(${group.id})">
+                    <div class="group-header">
+                        <div class="group-title">${group.name}</div>
+                        <div class="group-count">${group.members.length} member${group.members.length !== 1 ? 's' : ''}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openGroupDetailsModal(groupId) {
+            const group = groups.find(g => g.id === groupId);
+            if (!group) return;
+            
+            const modal = document.getElementById('groupDetailsModal');
+            const titleEl = document.getElementById('groupDetailsTitle');
+            const membersEl = document.getElementById('groupDetailsMembersList');
+            
+            titleEl.textContent = group.name;
+            
+            membersEl.innerHTML = `
+                <div style="margin-bottom: var(--space-16); padding: var(--space-12); background: var(--color-background); border-radius: var(--radius-base); border: 1px solid var(--color-border);">
+                    <label style="display: flex; align-items: center; gap: var(--space-12); cursor: pointer;">
+                        <input type="checkbox" id="playTogetherToggle" ${group.playTogether ? 'checked' : ''} onchange="togglePlayTogether(${groupId})" style="width: 20px; height: 20px; cursor: pointer;">
+                        <span style="font-weight: 500;">Play together as a group</span>
+                    </label>
+                    <small style="color: var(--color-text-secondary); font-size: 0.8rem; margin-top: 4px; display: block; margin-left: 32px;">
+                        When enabled, all members will be sent to the same court
+                    </small>
+                </div>
+                ${group.members.map((member, idx) => `
+                    <div class="player-item" style="margin-bottom: var(--space-8);">
+                        <div class="player-info">
+                            <div class="player-number">${idx + 1}</div>
+                            <div class="player-name">${member}</div>
+                        </div>
+                        <button class="player-remove" onclick="removeMemberFromGroupDetails(${groupId}, ${idx})">✕</button>
+                    </div>
+                `).join('')}
+            `;
+            
+            document.getElementById('groupDetailsDeleteBtn').onclick = () => deleteGroupFromDetails(groupId);
+            document.getElementById('groupDetailsAddBtn').onclick = () => addGroupToQueueFromDetails(groupId);
+            
+            modal.classList.add('active');
+        }
+
+        function togglePlayTogether(groupId) {
+            const group = groups.find(g => g.id === groupId);
+            if (!group) return;
+            
+            const checkbox = document.getElementById('playTogetherToggle');
+            group.playTogether = checkbox.checked;
+            updateGroupsDisplay();
+        }
+
+        function addGroupToQueueFromDetails(groupId) {
+            addGroupToQueue(groupId);
+            closeGroupDetailsModal();
+        }
+
+        function removeMemberFromGroupDetails(groupId, memberIndex) {
+            const group = groups.find(g => g.id === groupId);
+            if (!group) return;
+            
+            if (group.members.length === 1) {
+                alert('Cannot remove the last member. Delete the group instead.');
+                return;
+            }
+            
+            group.members.splice(memberIndex, 1);
+            updateGroupsDisplay();
+            openGroupDetailsModal(groupId);
+        }
+
+        function closeGroupDetailsModal() {
+            document.getElementById('groupDetailsModal').classList.remove('active');
+        }
+
+        function deleteGroupFromDetails(groupId) {
+            const group = groups.find(g => g.id === groupId);
+            if (!group) return;
+            
+            if (!confirm(`Delete group "${group.name}"?`)) return;
+            
+            groups = groups.filter(g => g.id !== groupId);
+            updateGroupsDisplay();
+            closeGroupDetailsModal();
+        }
+
+        document.getElementById('playerModal').addEventListener('click', (e) => {
+            if (e.target.id === 'playerModal') {
+                closePlayerModal();
+            }
+        });
+
+        document.getElementById('groupModal').addEventListener('click', (e) => {
+            if (e.target.id === 'groupModal') {
+                closeGroupModal();
+            }
+        });
+
+        document.getElementById('courtsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'courtsModal') {
+                closeCourtsModal();
+            }
+        });
+
+        document.getElementById('notificationModal').addEventListener('click', (e) => {
+            if (e.target.id === 'notificationModal') {
+                closeNotification();
+            }
+        });
+
+        document.getElementById('groupDetailsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'groupDetailsModal') {
+                closeGroupDetailsModal();
+            }
+        });
+
+        function showNotification(title, message, type = 'info') {
+            const modal = document.getElementById('notificationModal');
+            const titleEl = document.getElementById('notificationTitle');
+            const messageEl = document.getElementById('notificationMessage');
+            
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+            
+            const modalContent = modal.querySelector('.modal-content');
+            modalContent.style.borderTop = `4px solid ${
+                type === 'error' ? 'var(--color-error)' : 
+                type === 'warning' ? 'var(--color-orange-500)' : 
+                type === 'success' ? 'var(--color-success)' : 
+                'var(--color-primary)'
+            }`;
+            
+            modal.classList.add('active');
+        }
+
+        function closeNotification() {
+            document.getElementById('notificationModal').classList.remove('active');
+        }
+
+        initializeCourts();
+        updateDisplay();
+    </script>
+</body>
+</html>
+
