@@ -668,8 +668,50 @@
 
         let courtCount = 3;
 
+        // Persistence functions
+        function saveData() {
+            const data = {
+                playersQueue,
+                courts,
+                gamesPlayedCount,
+                groups,
+                queueIdCounter,
+                courtCount
+            };
+            localStorage.setItem('pcklrData', JSON.stringify(data));
+        }
+
+        function loadData() {
+            const savedData = localStorage.getItem('pcklrData');
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    playersQueue = data.playersQueue || [];
+                    courts = data.courts || [];
+                    gamesPlayedCount = data.gamesPlayedCount || 0;
+                    groups = data.groups || [];
+                    queueIdCounter = data.queueIdCounter || 0;
+                    courtCount = data.courtCount || 3;
+                } catch (e) {
+                    console.error('Error loading data:', e);
+                }
+            }
+        }
+
         function initializeCourts() {
-            courts = Array(courtCount).fill(null).map(() => []);
+            // Only re-initialize courts if the court count changed
+            if (courts.length !== courtCount) {
+                // Preserve existing courts and add new empty ones
+                if (courts.length < courtCount) {
+                    // Add new empty courts
+                    for (let i = courts.length; i < courtCount; i++) {
+                        courts.push([]);
+                    }
+                } else if (courts.length > courtCount) {
+                    // Remove excess courts
+                    courts = courts.slice(0, courtCount);
+                }
+            }
             updateCourtsDisplay();
             updateStats();
         }
@@ -712,6 +754,7 @@
 
             playerInput.value = '';
             updateDisplay();
+            saveData();
             closePlayerModal();
             
             if (duplicates.length > 0 && added.length === 0) {
@@ -728,6 +771,7 @@
         function removePlayer(index) {
             playersQueue.splice(index, 1);
             updateDisplay();
+            saveData();
         }
 
         function removeGroupFromQueue(groupName) {
@@ -744,6 +788,7 @@
             });
             
             updateDisplay();
+            saveData();
         }
 
         function sendToCourt(courtIndex) {
@@ -805,6 +850,7 @@
 
                     courts[courtIndex] = [...groupPlayers, ...extras];
                     updateDisplay();
+                    saveData();
                     return;
                 }
             }
@@ -813,6 +859,7 @@
             courts[courtIndex] = players;
             
             updateDisplay();
+            saveData();
         }
 
         function finishGame(courtIndex, winnersIndices) {
@@ -831,6 +878,7 @@
             gamesPlayedCount++;
             
             updateDisplay();
+            saveData();
         }
 
         function finishGameSimple(courtIndex) {
@@ -988,6 +1036,7 @@
             
             initializeCourts();
             updateDisplay();
+            saveData();
         }
 
         function openPlayerModal() {
@@ -1111,6 +1160,7 @@
             
             courtCount = newCount;
             initializeCourts();
+            saveData();
             closeCourtsModal();
         }
 
@@ -1144,6 +1194,7 @@
             
             closeGroupModal();
             updateGroupsDisplay();
+            saveData();
             alert(`Group "${groupName}" created with ${selectedGroupMembers.length} members`);
         }
 
@@ -1172,6 +1223,7 @@
             });
             
             updateDisplay();
+            saveData();
             
             if (duplicates.length > 0 && added.length === 0) {
                 showNotification('All group members already in system', `Cannot add group "${group.name}". All members are duplicates: ${duplicates.join(', ')}`, 'error');
@@ -1190,6 +1242,7 @@
             
             groups = groups.filter(g => g.id !== groupId);
             updateGroupsDisplay();
+            saveData();
         }
 
         function removeMemberFromGroup(groupId, memberIndex) {
@@ -1203,6 +1256,7 @@
             
             group.members.splice(memberIndex, 1);
             updateGroupsDisplay();
+            saveData();
         }
 
         function updateGroupsDisplay() {
@@ -1270,6 +1324,7 @@
             const checkbox = document.getElementById('playTogetherToggle');
             group.playTogether = checkbox.checked;
             updateGroupsDisplay();
+            saveData();
         }
 
         function addGroupToQueueFromDetails(groupId) {
@@ -1288,6 +1343,7 @@
             
             group.members.splice(memberIndex, 1);
             updateGroupsDisplay();
+            saveData();
             openGroupDetailsModal(groupId);
         }
 
@@ -1303,6 +1359,7 @@
             
             groups = groups.filter(g => g.id !== groupId);
             updateGroupsDisplay();
+            saveData();
             closeGroupDetailsModal();
         }
 
@@ -1359,6 +1416,7 @@
             document.getElementById('notificationModal').classList.remove('active');
         }
 
+        loadData();
         initializeCourts();
         updateDisplay();
     </script>
