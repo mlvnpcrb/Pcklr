@@ -250,39 +250,37 @@
                 return;
             }
 
-            // honour any "play together" group as a single unit; if the group is
-            // present in the queue we will remove all of its members and then
-            // add enough non‑group players to make a full four‑player game.  if
-            // there aren’t sufficient extras available we skip the group and fall
-            // back to the normal rotation.
+            // honour any "play together" group as a single unit ONLY if all members
+            // are within the next 4 players in line (respecting queue order)
             const groupsPlayingTogether = groups.filter(
                 g => g.playTogether && g.members.length >= 1 && g.members.length <= 4
             );
 
             for (const group of groupsPlayingTogether) {
-                // gather the queue indices of each member that’s waiting
+                // gather the queue indices of each member that's waiting
+                // but only from the next 4 players in line (respect queue order)
                 const groupIndices = [];
-                for (let i = 0; i < playersQueue.length; i++) {
+                for (let i = 0; i < Math.min(4, playersQueue.length); i++) {
                     if (group.members.includes(playersQueue[i].name)) {
                         groupIndices.push(i);
                     }
                 }
 
-                // only proceed when every member is queued
+                // only proceed when every member is in the next 4 players
                 if (groupIndices.length === group.members.length) {
                     const groupPlayers = groupIndices.map(i => playersQueue[i]);
                     const extrasNeeded = 4 - groupPlayers.length;
 
-                    // collect extras from the remaining queue
+                    // collect extras only from the next 4 positions
                     const extras = [];
-                    for (let i = 0; i < playersQueue.length && extras.length < extrasNeeded; i++) {
+                    for (let i = 0; i < Math.min(4, playersQueue.length) && extras.length < extrasNeeded; i++) {
                         if (!group.members.includes(playersQueue[i].name)) {
                             extras.push(playersQueue[i]);
                         }
                     }
 
                     if (extras.length < extrasNeeded) {
-                        // not enough non‑group players; try the next group
+                        // not enough non‑group players in next 4; try the next group
                         continue;
                     }
 
