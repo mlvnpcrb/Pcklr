@@ -159,10 +159,45 @@
 
         let courtCount = 3;
 
+        // Save state to localStorage
+        function saveState() {
+            const state = {
+                playersQueue,
+                courts,
+                gamesPlayedCount,
+                groups,
+                courtCount,
+                queueIdCounter
+            };
+            localStorage.setItem('pcklrGameState', JSON.stringify(state));
+        }
+
+        // Load state from localStorage
+        function loadState() {
+            const saved = localStorage.getItem('pcklrGameState');
+            if (saved) {
+                try {
+                    const state = JSON.parse(saved);
+                    playersQueue = state.playersQueue || [];
+                    courts = state.courts || [];
+                    gamesPlayedCount = state.gamesPlayedCount || 0;
+                    groups = state.groups || [];
+                    courtCount = state.courtCount || 3;
+                    queueIdCounter = state.queueIdCounter || 0;
+                    return true;
+                } catch (e) {
+                    console.error('Failed to load saved state:', e);
+                    return false;
+                }
+            }
+            return false;
+        }
+
         function initializeCourts() {
             courts = Array(courtCount).fill(null).map(() => []);
             updateCourtsDisplay();
             updateStats();
+            saveState();
         }
 
         function addPlayer() {
@@ -219,6 +254,7 @@
         function removePlayer(index) {
             playersQueue.splice(index, 1);
             updateDisplay();
+            saveState();
         }
 
         function removeGroupFromQueue(groupName) {
@@ -235,6 +271,7 @@
             });
             
             updateDisplay();
+            saveState();
         }
 
         function sendToCourt(courtIndex) {
@@ -294,6 +331,7 @@
 
                     courts[courtIndex] = [...groupPlayers, ...extras];
                     updateDisplay();
+                    saveState();
                     return;
                 }
             }
@@ -302,6 +340,7 @@
             courts[courtIndex] = players;
             
             updateDisplay();
+            saveState();
         }
 
         function finishGame(courtIndex, winnersIndices) {
@@ -320,6 +359,7 @@
             gamesPlayedCount++;
             
             updateDisplay();
+            saveState();
         }
 
         function finishGameSimple(courtIndex) {
@@ -487,6 +527,7 @@
             
             initializeCourts();
             updateDisplay();
+            saveState();
         }
 
         function openPlayerModal() {
@@ -610,6 +651,7 @@
             
             courtCount = newCount;
             initializeCourts();
+            saveState();
             closeCourtsModal();
         }
 
@@ -645,6 +687,7 @@
             
             closeGroupModal();
             updateGroupsDisplay();
+            saveState();
             showNotification('Group Created', `Group "${groupName}" created with ${memberNames.length} member${memberNames.length !== 1 ? 's' : ''}: ${memberNames.join(', ')}`, 'success');
         }
 
@@ -673,6 +716,7 @@
             });
             
             updateDisplay();
+            saveState();
             
             if (duplicates.length > 0 && added.length === 0) {
                 showNotification('All group members already in system', `Cannot add group "${group.name}". All members are duplicates: ${duplicates.join(', ')}`, 'error');
@@ -691,6 +735,7 @@
             
             groups = groups.filter(g => g.id !== groupId);
             updateGroupsDisplay();
+            saveState();
         }
 
         function removeMemberFromGroup(groupId, memberIndex) {
@@ -704,6 +749,7 @@
             
             group.members.splice(memberIndex, 1);
             updateGroupsDisplay();
+            saveState();
         }
 
         function updateGroupsDisplay() {
@@ -771,6 +817,7 @@
             const checkbox = document.getElementById('playTogetherToggle');
             group.playTogether = checkbox.checked;
             updateGroupsDisplay();
+            saveState();
         }
 
         function addGroupToQueueFromDetails(groupId) {
@@ -789,6 +836,7 @@
             
             group.members.splice(memberIndex, 1);
             updateGroupsDisplay();
+            saveState();
             openGroupDetailsModal(groupId);
         }
 
@@ -804,6 +852,7 @@
             
             groups = groups.filter(g => g.id !== groupId);
             updateGroupsDisplay();
+            saveState();
             closeGroupDetailsModal();
         }
 
@@ -860,7 +909,14 @@
             document.getElementById('notificationModal').classList.remove('active');
         }
 
-        initializeCourts();
+        // Initialize the application
+        if (loadState()) {
+            // State was loaded, reinitialize courts to ensure they're properly set up
+            initializeCourts();
+        } else {
+            // No saved state, initialize fresh
+            initializeCourts();
+        }
         updateDisplay();
     </script>
 </body>
