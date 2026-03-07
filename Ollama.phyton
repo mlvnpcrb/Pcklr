@@ -1,0 +1,15 @@
+import requests
+import json
+
+def chat_with_ollama(prompt):
+    response = requests.post('http://localhost:11434/api/generate', 
+                            json={
+                                'model': 'llama3.1',
+                                'prompt': prompt,
+                                'stream': False
+                            })
+    return response.json()['response']
+
+# Example usage
+result = chat_with_ollama("Write a Python function to calculate factorial")
+print(result)
