@@ -108,6 +108,31 @@
         </div>
     </div>
 
+    <div id="addMembersModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-header">Add Members to Group</h3>
+            <div class="form-group">
+                <label class="form-label">Select Players to Add (max 4 total per group)</label>
+                <div id="availablePlayersForGroup" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--radius-base); padding: var(--space-12); background: var(--color-background);">
+                    <div style="color: var(--color-text-secondary); text-align: center; padding: var(--space-16);">Add players to queue first</div>
+                </div>
+                <small style="color: var(--color-text-secondary); font-size: 0.8rem; margin-top: 4px; display: block;">
+                    Click on players from the queue to add them
+                </small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Players to Add (<span id="newMembersCount">0</span>)</label>
+                <div id="newMembersSelection" style="min-height: 100px; border: 1px solid var(--color-border); border-radius: var(--radius-base); padding: var(--space-12); background: var(--color-background);">
+                    <div style="color: var(--color-text-secondary); text-align: center; padding: var(--space-16);">No players selected</div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn--primary" onclick="saveGroupMembers()">Add to Group</button>
+                <button class="btn btn--secondary" onclick="closeAddMembersModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div id="courtsModal" class="modal">
         <div class="modal-content">
             <h3 class="modal-header">Change Number of Courts</h3>
@@ -144,6 +169,7 @@
             </div>
             <div class="modal-actions">
                 <button class="btn btn--primary" id="groupDetailsAddBtn" style="flex: 1;">Add to Queue</button>
+                <button class="btn btn--primary" id="groupDetailsAddMembersBtn" style="flex: 1;">Add Members</button>
                 <button class="btn btn-delete" id="groupDetailsDeleteBtn" style="flex: 1;">Delete Group</button>
                 <button class="btn btn--secondary" onclick="closeGroupDetailsModal()" style="flex: 1;">Close</button>
             </div>
@@ -541,6 +567,8 @@
         }
 
         let selectedGroupMembers = [];
+        let currentEditingGroupId = null;
+        let newMembersToAdd = [];
 
         function openGroupModal() {
             selectedGroupMembers = [];
@@ -806,6 +834,7 @@
             
             document.getElementById('groupDetailsDeleteBtn').onclick = () => deleteGroupFromDetails(groupId);
             document.getElementById('groupDetailsAddBtn').onclick = () => addGroupToQueueFromDetails(groupId);
+            document.getElementById('groupDetailsAddMembersBtn').onclick = () => openAddMembersModal(groupId);
             
             modal.classList.add('active');
         }
@@ -842,6 +871,139 @@
 
         function closeGroupDetailsModal() {
             document.getElementById('groupDetailsModal').classList.remove('active');
+        }
+
+        function openAddMembersModal(groupId) {
+            const group = groups.find(g => g.id === groupId);
+            if (!group) return;
+            
+            currentEditingGroupId = groupId;
+            newMembersToAdd = [];
+            updateAvailablePlayersForGroup();
+            updateNewMembersSelection();
+            document.getElementById('addMembersModal').classList.add('active');
+        }
+
+        function closeAddMembersModal() {
+            document.getElementById('addMembersModal').classList.remove('active');
+            currentEditingGroupId = null;
+            newMembersToAdd = [];
+        }
+
+        function updateAvailablePlayersForGroup() {
+            const container = document.getElementById('availablePlayersForGroup');
+            const group = groups.find(g => g.id === currentEditingGroupId);
+            
+            if (!group || playersQueue.length === 0) {
+                container.innerHTML = '<div style="color: var(--color-text-secondary); text-align: center; padding: var(--space-16);">Add players to queue first</div>';
+                return;
+            }
+
+            container.innerHTML = playersQueue.map((player, index) => {
+                const isSelected = newMembersToAdd.some(m => m.id === player.id);
+                const isAlreadyInGroup = group.members.includes(player.name);
+                const isDisabled = (newMembersToAdd.length + group.members.length >= 4 && !isSelected) || isAlreadyInGroup;
+                
+                return `
+                    <div class="player-item" style="cursor: ${isDisabled ? 'not-allowed' : 'pointer'}; opacity: ${isDisabled ? '0.5' : '1'}; ${isSelected ? 'border-color: var(--color-primary); background: rgba(var(--color-teal-500-rgb), 0.1); border-width: 2px;' : ''}" onclick="${isDisabled ? '' : `toggleNewMemberSelection(${index})`}">
+                        <div class="player-info">
+                            <div class="player-number">${index + 1}</div>
+                            <div class="player-name">
+                                ${player.name}
+                                ${isAlreadyInGroup ? '<span style="color: var(--color-text-secondary); font-size: 0.8rem;"> (already in group)</span>' : ''}
+                            </div>
+                        </div>
+                        ${isSelected ? '<span style="color: var(--color-success); font-weight: 600; font-size: 1.2rem;">✓</span>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleNewMemberSelection(playerIndex) {
+            const player = playersQueue[playerIndex];
+            const group = groups.find(g => g.id === currentEditingGroupId);
+            
+            if (!group) return;
+            
+            // Check if player is already in the group
+            if (group.members.includes(player.name)) {
+                showNotification('Already in Group', `${player.name} is already a member of this group`, 'warning');
+                return;
+            }
+            
+            const existingIndex = newMembersToAdd.findIndex(m => m.id === player.id);
+            
+            if (existingIndex >= 0) {
+                newMembersToAdd.splice(existingIndex, 1);
+            } else {
+                if (newMembersToAdd.length + group.members.length >= 4) {
+                    showNotification('Group Full', `Group can have maximum 4 members. Current: ${group.members.length}`, 'error');
+                    return;
+                }
+                newMembersToAdd.push(player);
+            }
+            
+            updateAvailablePlayersForGroup();
+            updateNewMembersSelection();
+        }
+
+        function updateNewMembersSelection() {
+            const container = document.getElementById('newMembersSelection');
+            const countSpan = document.getElementById('newMembersCount');
+            
+            countSpan.textContent = newMembersToAdd.length;
+            
+            if (newMembersToAdd.length === 0) {
+                container.innerHTML = '<div style="color: var(--color-text-secondary); text-align: center; padding: var(--space-16);">No players selected</div>';
+                return;
+            }
+
+            container.innerHTML = newMembersToAdd.map((member, index) => `
+                <div class="player-item" style="margin-bottom: var(--space-8);">
+                    <div class="player-info">
+                        <div class="player-number">${index + 1}</div>
+                        <div class="player-name">${member.name}</div>
+                    </div>
+                    <button class="player-remove" onclick="removeNewMemberSelection(${member.id})">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function removeNewMemberSelection(memberId) {
+            newMembersToAdd = newMembersToAdd.filter(m => m.id !== memberId);
+            updateAvailablePlayersForGroup();
+            updateNewMembersSelection();
+        }
+
+        function saveGroupMembers() {
+            const group = groups.find(g => g.id === currentEditingGroupId);
+            if (!group) return;
+            
+            if (newMembersToAdd.length === 0) {
+                showNotification('No Members Selected', 'Please select at least one player to add', 'error');
+                return;
+            }
+            
+            const newMemberNames = newMembersToAdd.map(m => m.name);
+            
+            // Check for duplicates
+            const duplicates = newMemberNames.filter(name => group.members.includes(name));
+            if (duplicates.length > 0) {
+                showNotification('Duplicate Members', `${duplicates.join(', ')} already in group`, 'error');
+                return;
+            }
+            
+            // Add new members to the group
+            group.members.push(...newMemberNames);
+            
+            closeAddMembersModal();
+            updateGroupsDisplay();
+            saveState();
+            
+            showNotification('Members Added', `Added ${newMemberNames.length} member${newMemberNames.length !== 1 ? 's' : ''} to "${group.name}": ${newMemberNames.join(', ')}`, 'success');
+            
+            // Reopen the group details modal to show the updated members
+            openGroupDetailsModal(group.id);
         }
 
         function deleteGroupFromDetails(groupId) {
@@ -883,6 +1045,12 @@
         document.getElementById('groupDetailsModal').addEventListener('click', (e) => {
             if (e.target.id === 'groupDetailsModal') {
                 closeGroupDetailsModal();
+            }
+        });
+
+        document.getElementById('addMembersModal').addEventListener('click', (e) => {
+            if (e.target.id === 'addMembersModal') {
+                closeAddMembersModal();
             }
         });
 
