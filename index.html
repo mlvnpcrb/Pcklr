@@ -532,7 +532,7 @@
                 const groupName = inGroup ? groups.find(g => g.members.includes(player.name)).name : '';
                 
                 return `
-                    <div class="player-item" style="cursor: ${isDisabled ? 'not-allowed' : 'pointer'}; opacity: ${isDisabled ? '0.5' : '1'}; ${isSelected ? 'border-color: var(--color-primary); background: rgba(var(--color-teal-500-rgb), 0.1);' : ''}" onclick="${isDisabled ? '' : `togglePlayerSelection(${index})`}">
+                    <div class="player-item" style="cursor: ${isDisabled ? 'not-allowed' : 'pointer'}; opacity: ${isDisabled ? '0.5' : '1'}; ${isSelected ? 'border-color: var(--color-primary); background: rgba(var(--color-teal-500-rgb), 0.1); border-width: 2px;' : ''}" onclick="${isDisabled ? '' : `togglePlayerSelection(${index})`}">
                         <div class="player-info">
                             <div class="player-number">${index + 1}</div>
                             <div class="player-name">
@@ -540,7 +540,7 @@
                                 ${inGroup ? `<span class="group-indicator">${groupName}</span>` : ''}
                             </div>
                         </div>
-                        ${isSelected ? '<span style="color: var(--color-success); font-weight: 600;">✓</span>' : ''}
+                        ${isSelected ? '<span style="color: var(--color-success); font-weight: 600; font-size: 1.2rem;">✓</span>' : ''}
                     </div>
                 `;
             }).join('');
@@ -619,12 +619,12 @@
             const groupName = document.getElementById('groupName').value.trim();
             
             if (!groupName) {
-                alert('Please enter a group name');
+                showNotification('Missing Group Name', 'Please enter a group name', 'error');
                 return;
             }
             
             if (selectedGroupMembers.length === 0) {
-                alert('Please select at least one member');
+                showNotification('No Members Selected', 'Please click on players to add them to the group. You must select at least 1 member.', 'error');
                 return;
             }
             
@@ -632,20 +632,22 @@
             const uniqueMembers = [...new Set(memberNames.map(name => name.toLowerCase()))];
             
             if (uniqueMembers.length !== memberNames.length) {
-                alert('Cannot create group with duplicate members');
+                showNotification('Duplicate Members', 'Cannot create group with duplicate members', 'error');
                 return;
             }
             
-            groups.push({
+            const newGroup = {
                 id: Date.now(),
                 name: groupName,
                 members: memberNames,
                 playTogether: false
-            });
+            };
+            
+            groups.push(newGroup);
             
             closeGroupModal();
             updateGroupsDisplay();
-            alert(`Group "${groupName}" created with ${selectedGroupMembers.length} members`);
+            showNotification('Group Created', `Group "${groupName}" created with ${memberNames.length} member${memberNames.length !== 1 ? 's' : ''}: ${memberNames.join(', ')}`, 'success');
         }
 
         function addGroupToQueue(groupId) {
