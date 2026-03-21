@@ -457,7 +457,7 @@
                     
                     if (matchingGroup && groupsInQueue.includes(matchingGroup)) {
                         html += `
-                            <div class="player-item" style="background: rgba(var(--color-teal-500-rgb), 0.08); border: 2px solid var(--color-primary);">
+                            <div class="player-item" draggable="true" data-player-id="${currentPlayer.id}" style="background: rgba(var(--color-teal-500-rgb), 0.08); border: 2px solid var(--color-primary);">
                                 <div class="player-info">
                                     <div class="player-number">${displayPosition}</div>
                                     <div class="player-name">
@@ -491,7 +491,7 @@
                 const displayGroup = currentPlayer.groupId ? currentPlayer.groupName : (inGroup ? groupName : '');
                 
                 html += `
-                    <div class="player-item">
+                    <div class="player-item" draggable="true" data-player-id="${currentPlayer.id}">
                         <div class="player-info">
                             <div class="player-number">${displayPosition}</div>
                             <div class="player-name">
@@ -510,6 +510,73 @@
             container.innerHTML = html;
         }
 
+        // Drag and Drop functionality
+        let draggedElement = null;
+        let draggedPlayerId = null;
+
+        document.addEventListener('dragstart', (e) => {
+            if (e.target.classList.contains('player-item')) {
+                draggedElement = e.target;
+                draggedPlayerId = e.target.dataset.playerId;
+                e.target.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', e.target.innerHTML);
+            }
+        });
+
+        document.addEventListener('dragend', (e) => {
+            if (e.target.classList.contains('player-item')) {
+                e.target.classList.remove('dragging');
+                // Remove drag-over class from all items
+                document.querySelectorAll('.player-item').forEach(item => {
+                    item.classList.remove('drag-over');
+                });
+                draggedElement = null;
+                draggedPlayerId = null;
+            }
+        });
+
+        document.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            const playerItem = e.target.closest('.player-item');
+            if (playerItem && playerItem !== draggedElement && draggedElement) {
+                playerItem.classList.add('drag-over');
+            }
+        });
+
+        document.addEventListener('dragleave', (e) => {
+            const playerItem = e.target.closest('.player-item');
+            if (playerItem) {
+                playerItem.classList.remove('drag-over');
+            }
+        });
+
+        document.addEventListener('drop', (e) => {
+            e.preventDefault();
+            
+            const playerItem = e.target.closest('.player-item');
+            if (playerItem && draggedElement && playerItem !== draggedElement) {
+                playerItem.classList.remove('drag-over');
+                
+                // Find indices of dragged and target players
+                const draggedIndex = playersQueue.findIndex(p => p.id === parseInt(draggedPlayerId));
+                const targetPlayerId = playerItem.dataset.playerId;
+                const targetIndex = playersQueue.findIndex(p => p.id === parseInt(targetPlayerId));
+                
+                if (draggedIndex !== -1 && targetIndex !== -1) {
+                    // Reorder the queue
+                    const draggedPlayer = playersQueue[draggedIndex];
+                    playersQueue.splice(draggedIndex, 1);
+                    playersQueue.splice(targetIndex, 0, draggedPlayer);
+                    
+                    updateDisplay();
+                    saveState();
+                }
+            }
+        });
+
         function updateCourtsDisplay() {
             const courtsGrid = document.getElementById('courtsGrid');
             
@@ -518,21 +585,39 @@
                 return;
             }
 
-            courtsGrid.innerHTML = courts.map((court, index) => `
-                <div class="court-card">
-                    <div class="court-header">Court ${index + 1}</div>
-                    <div class="court-players">
-                        ${court.length > 0 ? court.map((player, pIndex) => `
-                            <div class="court-player">Player ${pIndex + 1}: ${player.name}${player.groupId ? ` (${player.groupName})` : ''}</div>
-                        `).join('') : '<div class="empty-state" style="padding: var(--space-16);">Ready for players</div>'}
+            courtsGrid.innerHTML = courts.map((court, index) => {
+                // Get next 4 players in queue (or however many are available)
+                const nextPlayers = playersQueue.slice(0, 4);
+                
+                return `
+                    <div class="court-card">
+                        <div class="court-header">Court ${index + 1}</div>
+                        <div class="court-players">
+                            ${court.length > 0 ? court.map((player, pIndex) => `
+                                <div class="court-player">Player ${pIndex + 1}: ${player.name}${player.groupId ? ` (${player.groupName})` : ''}</div>
+                            `).join('') : '<div class="empty-state" style="padding: var(--space-16);">Ready for players</div>'}
+                        </div>
+                        ${nextPlayers.length > 0 ? `
+                            <div class="up-next-section">
+                                <div class="up-next-header">Up Next</div>
+                                <div class="up-next-players">
+                                    ${nextPlayers.map((player, pIndex) => `
+                                        <div class="up-next-player">
+                                            <span class="up-next-number">${pIndex + 1}</span>
+                                            <span class="up-next-name">${player.name}${player.groupId ? ` (${player.groupName})` : ''}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        ${court.length === 0 ? `
+                            <button class="btn btn-send" onclick="sendToCourt(${index})">Send Next 4</button>
+                        ` : `
+                            <button class="btn btn-send" onclick="finishGameSimple(${index})">Finish Game</button>
+                        `}
                     </div>
-                    ${court.length === 0 ? `
-                        <button class="btn btn-send" onclick="sendToCourt(${index})">Send Next 4</button>
-                    ` : `
-                        <button class="btn btn-send" onclick="finishGameSimple(${index})">Finish Game</button>
-                    `}
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function updateStats() {
